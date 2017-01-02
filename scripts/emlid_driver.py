@@ -3,11 +3,37 @@
 import sys
 import rospy
 import socket
-import errno
 import time
 import numpy as np
 from sensor_msgs.msg import NavSatFix
 import parse_RTK_msgs as parser
+
+import roslib
+roslib.load_manifest('diagnostic_updater')
+import diagnostic_updater
+import diagnostic_msgs
+
+class ReachDiagnostics:
+    def __init__(self):
+        self.gps_week = 0
+        self.gps_tow = 0
+        self.num_sats = 0
+        self.quality = 0
+        self.age = 0
+        self.ratio = 0
+
+    def run_diagnostics(self, stat):
+        #TODO write a state machine to handle different cases of operation and failure
+        stat.summary(diagnostic_msgs.msg.DiagnosticStatus.OK,
+                     'GPS Time obtained')
+        stat.add('GPS week', self.gps_week)
+        stat.add('GPS TOW', self.gps_tow)
+        stat.add('Num Sats', self.num_sats)
+        stat.add('Quality', self.quality)
+        stat.add('age', self.age)
+        stat.add('ratio', self.ratio)
+
+        return stat
 
 
 class EmlidReach:
@@ -25,6 +51,8 @@ class EmlidReach:
         self.last_data_tstamp = time.time()
 
         self.socket_listen = None
+
+        self.reach_diagnostics = ReachDiagnostics()
 
     def init_sockets(self):
         """Initialize sockets for communication with EMLID reach"""
@@ -77,14 +105,31 @@ class EmlidReach:
             self.gps_data.position_covariance[8] = res['sdu']**2
             self.gps_data.position_covariance_type = NavSatFix.COVARIANCE_TYPE_KNOWN
 
+            self.reach_diagnostics.gps_week = res['GPSW']
+            self.reach_diagnostics.gps_tow = res['TOW']
+            self.reach_diagnostics.num_sats = res['ns']
+            self.reach_diagnostics.quality = res['Q']
+            self.reach_diagnostics.age = res['age']
+            self.reach_diagnostics.ratio = res['ratio']
+
             rospy.logdebug('lat: %f, lon: %f, alt: %f' % (self.gps_data.latitude, self.gps_data.longitude, self.gps_data.altitude))
 
     def listener(self):
         """Creates a python node, to publish messages from EMLID Rover as ROS messages"""
-        rospy.init_node('power_listener', anonymous=True)
+        rospy.init_node('emlid_reach_rtk', anonymous=False)
 
         pub = rospy.Publisher('emlid_gps', NavSatFix, queue_size=100)
         rate = rospy.Rate(50)
+
+        updater = diagnostic_updater.Updater()
+        updater.setHardwareID('Device : Reach')
+
+        updater.add('Reach status', self.reach_diagnostics.run_diagnostics)
+
+        freq_bounds = {'min': 5, 'max': 10}
+        pub_freq = diagnostic_updater.HeaderlessTopicDiagnostic('emlid_gps', updater,
+                                                                diagnostic_updater.FrequencyStatusParam(freq_bounds,
+                                                                                                        0.1, 10))
 
         # try to establish connection with the TCP server of emlid
         self.init_sockets()
@@ -115,7 +160,9 @@ class EmlidReach:
             if self.flag_new_data is True:
                 self.flag_new_data = False
                 pub.publish(self.gps_data)
+                pub_freq.tick()
 
+            updater.update()
             rate.sleep()
 
 if __name__ == '__main__':
