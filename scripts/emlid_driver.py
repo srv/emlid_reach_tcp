@@ -21,6 +21,7 @@ class ReachDiagnostics:
         self.quality = 0
         self.age = 0
         self.ratio = 0
+        self.rtk_quality = ['Fixed', 'Float', 'Reserved', 'DGPS', 'Single']
 
     def run_diagnostics(self, stat):
         #TODO write a state machine to handle different cases of operation and failure
@@ -29,7 +30,7 @@ class ReachDiagnostics:
         stat.add('GPS week', self.gps_week)
         stat.add('GPS TOW', self.gps_tow)
         stat.add('Num Sats', self.num_sats)
-        stat.add('Quality', self.quality)
+        stat.add('Quality', self.rtk_quality[int(self.quality-1)%5])
         stat.add('age', self.age)
         stat.add('ratio', self.ratio)
 
