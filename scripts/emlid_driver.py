@@ -13,6 +13,16 @@ roslib.load_manifest('diagnostic_updater')
 import diagnostic_updater
 import diagnostic_msgs
 
+DEFAULT_CONFIG = {
+    'TCP_IP': '192.168.1.177',  
+    'TCP_PORT': 9001,           
+    'BUFFER_SIZE': 1024,        
+    'timeout_counter': 0,        
+    'timeout_threshold': 5.0,
+    'frame_id': 'map'     
+
+}
+
 class ReachDiagnostics:
     def __init__(self):
         self.gps_week = 0
@@ -40,20 +50,33 @@ class ReachDiagnostics:
 class EmlidReach:
 
     def __init__(self):
+        # Generate msgs
         self.gps_data = NavSatFix()
         self.flag_new_data = False
         
-        self.TCP_IP = '192.168.2.15'
-        self.TCP_PORT = 5001
-        self.BUFFER_SIZE = 1024
-
-        self.timeout_counter = 0
-        self.timeout_threshold = 5.0
+        # Config
+        self.get_config()
+        self.TCP_IP = self.config['TCP_IP']
+        self.TCP_PORT = self.config['TCP_PORT']
+        self.BUFFER_SIZE = self.config['BUFFER_SIZE']
+        self.timeout_counter = self.config['timeout_counter']
+        self.timeout_threshold = self.config['timeout_threshold']
+        self.frame_id = self.config['frame_id']
         self.last_data_tstamp = time.time()
-
         self.socket_listen = None
 
+        # Diagnostics
         self.reach_diagnostics = ReachDiagnostics()
+
+
+    def get_config(self):
+        # set parameters
+        self.config = DEFAULT_CONFIG.copy()
+        param_config = rospy.get_param('~emild_config', {})
+        self.config.update(param_config)
+        rospy.loginfo('[%s]: emlid config: %s', name, self.config)
+
+        
 
     def init_sockets(self):
         """Initialize sockets for communication with EMLID reach"""
@@ -141,7 +164,7 @@ class EmlidReach:
             # try getting data on the channel
             try:
 
-                data = self.socket_listen.recv(1024)
+                data = self.socket_listen.recv(self.BUFFER_SIZE)
                 if data:
                     self.last_data_tstamp = time.time()
                     self.handle_gps_msg(data)
@@ -167,6 +190,8 @@ class EmlidReach:
             rate.sleep()
 
 if __name__ == '__main__':
+    name = rospy.get_name()
+
     p = EmlidReach()
     try:
         p.listener()
