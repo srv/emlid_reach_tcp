@@ -112,7 +112,7 @@ class EmlidReach:
             self.flag_new_data = True
 
             # store the gps data from emlid into the Navsat fix msg from ROS
-            self.gps_data.header.frame_id = 'kf'
+            self.gps_data.header.frame_id = self.frame_id
             # Note this time contains the system time, for getting gps time use timereference message under sensor_msgs
             self.gps_data.header.stamp = rospy.get_rostime()
             self.gps_data.latitude = res['lat']
