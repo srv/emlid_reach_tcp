@@ -1,7 +1,7 @@
 <launch>
-    <node name="emlid_driver" pkg="emlid_reach_tcp" type="emlid_driver.py" output="screen">
-    	<rosparam command="load" file="$(find emlid_reach_tcp)/config/param_emlid.yaml" />
-    	<remap from="/emlid_gps" to="/sensors/gps_raw" />
-    	<remap from="/diagnostics" to="/sensors/gps_diagnostics" />
-    </node>
+  <rosparam command="load" file="$(find turbot)/config/emlid_gps.yaml" />
+  <node name="emlid_driver" pkg="emlid_reach_tcp" type="emlid_driver.py" output="screen">
+    <remap from="/emlid_gps" to="/sensors/gps_raw" />
+    <remap from="/diagnostics" to="/sensors/gps_diagnostics" />
+  </node>
 </launch>

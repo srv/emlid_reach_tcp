@@ -1,5 +1,4 @@
 <launch>
     <node name="emlid_nmea" pkg="emlid_reach_tcp" type="emlid_nmea.py" output="screen">
-    	<rosparam command="load" file="$(find emlid_reach_tcp)/config/param_emlid.yaml" />
     </node>
 </launch>

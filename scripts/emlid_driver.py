@@ -14,12 +14,12 @@ import diagnostic_updater
 import diagnostic_msgs
 
 DEFAULT_CONFIG = {
-    'TCP_IP': '192.168.1.177',  
-    'TCP_PORT': 9001,           
-    'BUFFER_SIZE': 1024,        
-    'timeout_counter': 0,        
+    'TCP_IP': '192.168.1.177',
+    'TCP_PORT': 9001,
+    'BUFFER_SIZE': 1024,
+    'timeout_counter': 0,
     'timeout_threshold': 5.0,
-    'frame_id': 'map'     
+    'frame_id': 'map'
 
 }
 
@@ -53,7 +53,7 @@ class EmlidReach:
         # Generate msgs
         self.gps_data = NavSatFix()
         self.flag_new_data = False
-        
+
         # Config
         self.get_config()
         self.TCP_IP = self.config['TCP_IP']
@@ -72,11 +72,11 @@ class EmlidReach:
     def get_config(self):
         # set parameters
         self.config = DEFAULT_CONFIG.copy()
-        param_config = rospy.get_param('~emild_config', {})
+        param_config = rospy.get_param('~emlid_config', {})
         self.config.update(param_config)
         rospy.loginfo('[%s]: emlid config: %s', name, self.config)
 
-        
+
 
     def init_sockets(self):
         """Initialize sockets for communication with EMLID reach"""
@@ -139,9 +139,6 @@ class EmlidReach:
             rospy.logdebug('lat: %f, lon: %f, alt: %f' % (self.gps_data.latitude, self.gps_data.longitude, self.gps_data.altitude))
 
     def listener(self):
-        """Creates a python node, to publish messages from EMLID Rover as ROS messages"""
-        rospy.init_node('emlid_reach_rtk', anonymous=False)
-
         pub = rospy.Publisher('emlid_gps', NavSatFix, queue_size=100)
         rate = rospy.Rate(50)
 
@@ -191,6 +188,9 @@ class EmlidReach:
 
 if __name__ == '__main__':
     name = rospy.get_name()
+
+    """Creates a python node, to publish messages from EMLID Rover as ROS messages"""
+    rospy.init_node('emlid_reach_rtk', anonymous=False)
 
     p = EmlidReach()
     try:
