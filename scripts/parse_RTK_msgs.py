@@ -14,6 +14,8 @@ def parse_llh_msgs(data):
 
     if num_vals == len(data_format):
         for i in range(num_vals):
+            if i < 2:
+                continue
             outp[data_format[i]] = float(all_vals[i])
 
         return outp

@@ -129,8 +129,8 @@ class EmlidReach:
             self.gps_data.position_covariance[8] = res['sdu']**2
             self.gps_data.position_covariance_type = NavSatFix.COVARIANCE_TYPE_KNOWN
 
-            self.reach_diagnostics.gps_week = res['GPSW']
-            self.reach_diagnostics.gps_tow = res['TOW']
+            #self.reach_diagnostics.gps_week = res['GPSW']
+            #self.reach_diagnostics.gps_tow = res['TOW']
             self.reach_diagnostics.num_sats = res['ns']
             self.reach_diagnostics.quality = res['Q']
             self.reach_diagnostics.age = res['age']
