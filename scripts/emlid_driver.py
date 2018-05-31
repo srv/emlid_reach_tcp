@@ -14,7 +14,7 @@ import diagnostic_updater
 import diagnostic_msgs
 
 DEFAULT_CONFIG = {
-    'TCP_IP': '192.168.1.200',
+    'TCP_IP': '192.168.1.180',
     'TCP_PORT': 9001,
     'BUFFER_SIZE': 1024,
     'timeout_counter': 0,
