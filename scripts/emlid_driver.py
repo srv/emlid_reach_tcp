@@ -3,6 +3,7 @@
 import sys
 import rospy
 import socket
+import serial
 import time
 import numpy as np
 from sensor_msgs.msg import NavSatFix
@@ -19,8 +20,15 @@ DEFAULT_CONFIG = {
     'BUFFER_SIZE': 1024,
     'timeout_counter': 0,
     'timeout_threshold': 5.0,
-    'frame_id': 'map'
-
+    'frame_id': 'map',
+    'SERIALPORT': '/dev/ttyACM0',
+    'BAUDRATE': 57600,
+    'parity': serial.PARITY_NONE,
+    'rtscts': False,
+    'xonxoff': False,
+    'rts': False,
+    'dtr': False,
+    'use_serial': False
 }
 
 class ReachDiagnostics:
@@ -65,6 +73,8 @@ class EmlidReach:
         self.last_data_tstamp = time.time()
         self.socket_listen = None
 
+        self.use_serial = self.config['use_serial']
+
         # Diagnostics
         self.reach_diagnostics = ReachDiagnostics()
 
@@ -76,6 +86,22 @@ class EmlidReach:
         self.config.update(param_config)
         rospy.loginfo('[%s]: emlid config: %s', name, self.config)
 
+
+    def init_serial(self):
+        # connect to serial port
+        self.ser = serial.serial_for_url(self.config['SERIALPORT'], do_not_open=True)
+        self.ser.baudrate = self.config['BAUDRATE']
+        self.ser.parity = self.config['parity']
+        self.ser.rtscts = self.config['rtscts']
+        self.ser.xonxoff = self.config['xonxoff']
+        self.ser.rts = self.config['rts']
+        self.ser.dtr = self.config['dtr']
+        try:
+            self.ser.open()
+            rospy.loginfo('Serial connection opened')
+        except serial.SerialException as e:
+            sys.stderr.write('Could not open serial port {}: {}\n'.format(self.ser.name, e))
+            sys.exit(1)
 
 
     def init_sockets(self):
@@ -96,10 +122,6 @@ class EmlidReach:
             rospy.logerr('Failed to connect to address. Error code: '+ str(msg[0]) + ' Msg : '+str(msg[1]))
             sys.exit()
         rospy.loginfo('Socket connected')
-
-    def close_socket(self):
-        """Closes the socket connection"""
-        self.socket_listen.close()
 
     def handle_gps_msg(self, data):
         """"Parses the data to ROS NavSatFix messages
@@ -138,6 +160,18 @@ class EmlidReach:
 
             rospy.logdebug('lat: %f, lon: %f, alt: %f' % (self.gps_data.latitude, self.gps_data.longitude, self.gps_data.altitude))
 
+    def readline(self):
+        if self.use_serial:
+            return self.ser.readline()
+        else:
+            return self.socket_listen.recv(self.BUFFER_SIZE)
+
+    def shutdown(self):
+        if self.use_serial:
+            self.ser.close()
+        else:
+            self.socket_listen.close()
+
     def listener(self):
         pub = rospy.Publisher('emlid_gps', NavSatFix, queue_size=100)
         rate = rospy.Rate(50)
@@ -153,15 +187,17 @@ class EmlidReach:
                                                                                                         0.1, 10))
 
         # try to establish connection with the TCP server of emlid
-        self.init_sockets()
+        if self.use_serial:
+            self.init_serial()
+        else:
+            self.init_sockets()
 
         # if connection is successful begin collecting data and parsing them
         while not rospy.is_shutdown():
 
             # try getting data on the channel
             try:
-
-                data = self.socket_listen.recv(self.BUFFER_SIZE)
+                data = self.readline()
                 if data:
                     self.last_data_tstamp = time.time()
                     self.handle_gps_msg(data)
@@ -170,11 +206,11 @@ class EmlidReach:
                     self.timeout_counter = time.time() - self.last_data_tstamp
                     if self.timeout_counter > self.timeout_threshold:
                         rospy.loginfo('Connection timed out. Closing')
-                        self.socket_listen.close()
+                        self.shutdown()
                         sys.exit()
 
             except socket.error as (code, msg):
-                self.socket_listen.close()
+                self.shutdown()
                 rospy.loginfo('Exiting with MSG: %s' % (msg))
                 sys.exit()
 
@@ -196,5 +232,5 @@ if __name__ == '__main__':
     try:
         p.listener()
     except rospy.ROSInterruptException:
-        p.close_socket()
+        p.shutdown()
         rospy.loginfo('Exiting...')
