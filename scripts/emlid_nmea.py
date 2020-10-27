@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # connect to the TCP server run by emlid rover and publish gps messages as output
 import sys
 import rospy
