@@ -13,8 +13,8 @@
   <build_depend>rospy</build_depend>
   <build_depend>sensor_msgs</build_depend>
 
-  <exec_depend>rospy</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>sensor_msgs</run_depend>
 
   <export>
   </export>
