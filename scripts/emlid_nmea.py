@@ -12,7 +12,7 @@ import roslib
 
 
 DEFAULT_CONFIG = {
-    'TCP_IP': '192.168.1.177',  
+    'TCP_IP': '172.28.5.177',  
     'TCP_PORT': 9001,           
     'BUFFER_SIZE': 1024,
 }
