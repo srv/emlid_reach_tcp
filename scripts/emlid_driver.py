@@ -15,7 +15,7 @@ import diagnostic_updater
 import diagnostic_msgs
 
 DEFAULT_CONFIG = {
-    'TCP_IP': '172.28.5.180',
+    'TCP_IP': '172.28.5.254',
     'TCP_PORT': 9001,
     'BUFFER_SIZE': 1024,
     'timeout_counter': 0,
@@ -84,7 +84,7 @@ class EmlidReach:
         self.config = DEFAULT_CONFIG.copy()
         param_config = rospy.get_param('~emlid_config', {})
         self.config.update(param_config)
-        rospy.loginfo('[%s]: emlid config: %s', name, self.config)
+        rospy.loginfo('[%s]: emlid config: %s', rospy.get_name(), self.config)
 
 
     def init_serial(self):
@@ -110,7 +110,7 @@ class EmlidReach:
         # try creating a socket for communication
         try:
             self.socket_listen = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        except socket.error, msg:
+        except socket.error as msg:
             rospy.logerr('Failed to create socket. Error code: '+ str(msg[0]) + ' Msg : '+str(msg[1]))
             sys.exit()
         rospy.loginfo('Socket created')
@@ -118,8 +118,8 @@ class EmlidReach:
         # try connecting to the desired IP and PORT
         try:
             self.socket_listen.connect((self.TCP_IP, self.TCP_PORT))
-        except socket.error, msg:
-            rospy.logerr('Failed to connect to address. Error code: '+ str(msg[0]) + ' Msg : '+str(msg[1]))
+        except socket.error as e:
+            rospy.logerr(f"Failed to connect to address. Error code: {e.errno} Msg : {e.strerror}")
             sys.exit()
         rospy.loginfo('Socket connected')
 
@@ -209,7 +209,8 @@ class EmlidReach:
                         self.shutdown()
                         sys.exit()
 
-            except socket.error as (code, msg):
+            except socket.error as e:
+                code, msg = e.args
                 self.shutdown()
                 rospy.loginfo('Exiting with MSG: %s' % (msg))
                 sys.exit()
