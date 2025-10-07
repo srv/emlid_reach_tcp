@@ -15,12 +15,12 @@ import diagnostic_updater
 import diagnostic_msgs
 
 DEFAULT_CONFIG = {
-    'TCP_IP': '172.28.5.254',
+    'TCP_IP': '172.28.5.35',
     'TCP_PORT': 9001,
     'BUFFER_SIZE': 1024,
     'timeout_counter': 0,
     'timeout_threshold': 5.0,
-    'frame_id': 'map',
+    'frame_id': 'xiroi/base_link',
     'SERIALPORT': '/dev/ttyACM0',
     'BAUDRATE': 57600,
     'parity': serial.PARITY_NONE,
